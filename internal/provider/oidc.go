@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"os"
 
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
@@ -10,9 +11,10 @@ import (
 
 // OIDC provider
 type OIDC struct {
-	IssuerURL    string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
-	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
-	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	IssuerURL        string `long:"issuer-url" env:"ISSUER_URL" description:"Issuer URL"`
+	ClientID         string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
+	ClientSecret     string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
+	ClientSecretFile string `long:"client-secret-file" env:"CLIENT_SECRET_FILE" description:"Client Secret File"`
 
 	OAuthProvider
 
@@ -28,8 +30,8 @@ func (o *OIDC) Name() string {
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
 	// Check parms
-	if o.IssuerURL == "" || o.ClientID == "" || o.ClientSecret == "" {
-		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret must be set")
+	if o.IssuerURL == "" || o.ClientID == "" || (o.ClientSecret == "" && o.ClientSecretFile == "") {
+		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret[-file] must be set")
 	}
 
 	var err error
@@ -39,6 +41,14 @@ func (o *OIDC) Setup() error {
 	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL)
 	if err != nil {
 		return err
+	}
+
+	if len(o.ClientSecret) == 0 {
+		secret, err := os.ReadFile(o.ClientSecretFile)
+		if err != nil {
+			return err
+		}
+		o.ClientSecret = string(secret[:])
 	}
 
 	// Create oauth2 config
