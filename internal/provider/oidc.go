@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 	"errors"
-	"os"
+	"io/ioutil"
 
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
@@ -29,8 +29,16 @@ func (o *OIDC) Name() string {
 
 // Setup performs validation and setup
 func (o *OIDC) Setup() error {
+	if len(o.ClientSecretFile) > 0 {
+		secret, err := ioutil.ReadFile(o.ClientSecretFile)
+		if err != nil {
+			return err
+		}
+		o.ClientSecret = string(secret[:])
+	}
+
 	// Check parms
-	if o.IssuerURL == "" || o.ClientID == "" || (o.ClientSecret == "" && o.ClientSecretFile == "") {
+	if o.IssuerURL == "" || o.ClientID == "" || o.ClientSecret == "" {
 		return errors.New("providers.oidc.issuer-url, providers.oidc.client-id, providers.oidc.client-secret[-file] must be set")
 	}
 
@@ -41,14 +49,6 @@ func (o *OIDC) Setup() error {
 	o.provider, err = oidc.NewProvider(o.ctx, o.IssuerURL)
 	if err != nil {
 		return err
-	}
-
-	if len(o.ClientSecret) == 0 {
-		secret, err := os.ReadFile(o.ClientSecretFile)
-		if err != nil {
-			return err
-		}
-		o.ClientSecret = string(secret[:])
 	}
 
 	// Create oauth2 config

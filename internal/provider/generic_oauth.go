@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"os"
 
 	"golang.org/x/oauth2"
 )
@@ -32,17 +32,17 @@ func (o *GenericOAuth) Name() string {
 
 // Setup performs validation and setup
 func (o *GenericOAuth) Setup() error {
-	// Check parmas
-	if o.AuthURL == "" || o.TokenURL == "" || o.UserURL == "" || o.ClientID == "" || (o.ClientSecret == "" && o.ClientSecretFile == "") {
-		return errors.New("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret[-file] must be set")
-	}
-
-	if len(o.ClientSecret) == 0 {
-		secret, err := os.ReadFile(o.ClientSecretFile)
+	if len(o.ClientSecretFile) > 0 {
+		secret, err := ioutil.ReadFile(o.ClientSecretFile)
 		if err != nil {
 			return err
 		}
 		o.ClientSecret = string(secret[:])
+	}
+
+	// Check parmas
+	if o.AuthURL == "" || o.TokenURL == "" || o.UserURL == "" || o.ClientID == "" || o.ClientSecret == "" {
+		return errors.New("providers.generic-oauth.auth-url, providers.generic-oauth.token-url, providers.generic-oauth.user-url, providers.generic-oauth.client-id, providers.generic-oauth.client-secret[-file] must be set")
 	}
 
 	// Create oauth2 config

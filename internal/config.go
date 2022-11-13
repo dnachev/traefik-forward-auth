@@ -38,7 +38,7 @@ type Config struct {
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
 	SecretString           string               `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	SecretFile             string               `long:"secret" env:"SECRET_FILE" description:"File holding the secret used for signing (required)" json:"-"`
+	SecretFile             string               `long:"secret-file" env:"SECRET_FILE" description:"File holding the secret used for signing (required)" json:"-"`
 	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given email addresses, can be set multiple times"`
 	Port                   int                  `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
@@ -259,7 +259,7 @@ func (c *Config) Validate() {
 		if len(c.SecretFile) == 0 {
 			log.Fatal("\"secret\" or \"secret-file\" option must be set")
 		}
-		secret, err := os.ReadFile(c.SecretFile)
+		secret, err := ioutil.ReadFile(c.SecretFile)
 		if err != nil {
 			log.Fatal(err)
 		}
